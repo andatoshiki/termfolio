@@ -1,0 +1,40 @@
+# fly.toml app configuration file generated for joe-ssh on 2026-02-04T23:22:22-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'joe-ssh'
+primary_region = 'lax'
+
+[build]
+
+[env]
+  SSH_ADDR = '0.0.0.0:2222'
+  SSH_HOST_KEY_PATH = '/data/host_ed25519'
+
+[[mounts]]
+  source = 'ssh_keys'
+  destination = '/data'
+
+[http_service]
+  internal_port = 2222
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 2222
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[services.ports]]
+    port = 22
+
+[[vm]]
+  memory = '256mb'
+  cpus = 1
+  memory_mb = 256

@@ -1,0 +1,8 @@
+.DS_Store
+ssh-server
+ssh-server-linux
+bin/
+.ssh/
+.cursor
+.agents
+ssh-tui
