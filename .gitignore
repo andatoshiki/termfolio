@@ -7,3 +7,4 @@ bin/
 .cursor
 .agents
 ssh-tui
+*.db
