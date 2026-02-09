@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -8,12 +9,14 @@ import (
 	"github.com/andatoshiki/termfolio/view"
 )
 
-var menuItems = []string{"About", "Projects", "Experience", "Contact"}
+var menuItems = []string{"About", "Projects", "Experience", "Contact", "Privacy", "Feed"}
 var menuDescriptions = []string{
 	"Who I am",
 	"Selected work",
 	"Roles and timeline",
 	"Get in touch",
+	"Tracking control",
+	"Latest posts",
 }
 
 const (
@@ -25,11 +28,17 @@ func MenuItems() []string {
 	return menuItems
 }
 
-func RenderMenu(styles view.ThemeStyles, menuCursor int, logoSweepIndex int, themeLabel string) string {
+func RenderMenu(styles view.ThemeStyles, menuCursor int, logoSweepIndex int, themeLabel string, visitorCount int) string {
 	var b strings.Builder
 
 	b.WriteString(view.RenderGradientLogo(60, logoSweepIndex, styles.LogoBase, styles.LogoSnake))
-	b.WriteString("\n\n")
+	if visitorCount > 0 {
+		b.WriteString("\n")
+		b.WriteString(styles.Subtle.Render(fmt.Sprintf("Visits: %d", visitorCount)))
+		b.WriteString("\n\n")
+	} else {
+		b.WriteString("\n\n")
+	}
 
 	for i, item := range menuItems {
 		cursor := "  "

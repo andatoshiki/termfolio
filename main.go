@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,6 +15,7 @@ import (
 	"github.com/muesli/termenv"
 
 	"github.com/andatoshiki/termfolio/config"
+	"github.com/andatoshiki/termfolio/counter"
 	"github.com/andatoshiki/termfolio/ui"
 )
 
@@ -46,6 +48,15 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	var counterStore *counter.Store
+	if cfg.Counter.Enabled {
+		store, err := counter.Open(cfg.Counter.DBPath)
+		if err != nil {
+			log.Fatalf("Failed to open counter db: %v", err)
+		}
+		counterStore = store
+	}
+
 	// Ensure host key exists (will prompt user to generate if needed)
 	if err := EnsureHostKey(cfg.SSH.HostKeyPath); err != nil {
 		log.Fatalf("Failed to ensure host key: %v", err)
@@ -54,20 +65,47 @@ func main() {
 	publicKeyAuth := func(ctx ssh.Context, key ssh.PublicKey) bool {
 		return true
 	}
-	// This lets people see the portfolio even without a public key
-	passwordAuth := func(ctx ssh.Context, password string) bool {
-		return true
-	}
 
 	teaHandler := func(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-		return ui.NewModel(), []tea.ProgramOption{tea.WithAltScreen()}
+		visitorCount := 0
+		trackingEnabled := counterStore != nil
+		remoteIP := ""
+		if counterStore != nil {
+			if addr := s.RemoteAddr(); addr != nil {
+				host, _, err := net.SplitHostPort(addr.String())
+				if err == nil {
+					remoteIP = host
+				} else {
+					remoteIP = addr.String()
+				}
+			}
+
+			if remoteIP != "" {
+				optedOut, err := counterStore.IsOptedOut(remoteIP)
+				if err != nil {
+					log.Printf("Failed to read privacy status: %v", err)
+				} else {
+					trackingEnabled = !optedOut
+				}
+			}
+
+			var err error
+			if trackingEnabled {
+				visitorCount, err = counterStore.RecordVisit(remoteIP)
+			} else {
+				visitorCount, err = counterStore.Count()
+			}
+			if err != nil {
+				log.Printf("Failed to update counter: %v", err)
+			}
+		}
+		return ui.NewModelWithCounter(counterStore, visitorCount, remoteIP, trackingEnabled), []tea.ProgramOption{tea.WithAltScreen()}
 	}
 
 	s, err := wish.NewServer(
 		wish.WithAddress(cfg.SSH.ListenAddr()),
 		wish.WithHostKeyPath(cfg.SSH.HostKeyPath),
 		wish.WithPublicKeyAuth(publicKeyAuth),
-		wish.WithPasswordAuth(passwordAuth),
 		wish.WithMiddleware(
 			bubbletea.Middleware(teaHandler),
 		),

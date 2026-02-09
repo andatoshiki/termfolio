@@ -19,6 +19,8 @@ const (
 	projectsPage
 	experiencePage
 	contactPage
+	privacyPage
+	feedPage
 )
 
 type model struct {
@@ -28,6 +30,7 @@ type model struct {
 	expCursor      int
 	aboutReveal    int
 	aboutScramble  int
+	visitorCount   int
 	width          int
 	height         int
 	logoSweepIndex int
@@ -44,6 +47,7 @@ func initialModel() model {
 		expCursor:      0,
 		aboutReveal:    0,
 		aboutScramble:  0,
+		visitorCount:   0,
 		width:          80,
 		height:         24,
 		logoSweepIndex: 0,
@@ -149,6 +153,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.currentPage = experiencePage
 				case 3:
 					m.currentPage = contactPage
+				case 4:
+					m.currentPage = privacyPage
+				case 5:
+					m.currentPage = feedPage
 				}
 			}
 			return m, nil
@@ -190,7 +198,7 @@ func (m model) View() string {
 
 	switch m.currentPage {
 	case menuPage:
-		content = RenderMenu(m.styles, m.menuCursor, m.logoSweepIndex, themeLabel)
+		content = RenderMenu(m.styles, m.menuCursor, m.logoSweepIndex, themeLabel, m.visitorCount)
 	case aboutPage:
 		content = RenderAbout(m.styles, m.aboutReveal, m.aboutScramble, themeLabel)
 	case projectsPage:
@@ -199,6 +207,10 @@ func (m model) View() string {
 		content = RenderExperience(m.styles, m.expCursor, themeLabel)
 	case contactPage:
 		content = RenderContact(m.styles, themeLabel)
+	case privacyPage:
+		content = RenderPrivacy(m.styles, 0, false, false, themeLabel)
+	case feedPage:
+		content = RenderFeed(m.styles, nil, 0, 0, 0, false, "", themeLabel)
 	}
 
 	boxWidth := min(m.width-4, 70)

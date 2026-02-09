@@ -7,3 +7,11 @@ ssh:
   
   # Path to the SSH host key (will be generated if not present)
   hostKeyPath: ".ssh/host_ed25519"
+
+counter:
+  # You can also set "counter: false" to disable entirely.
+  # Enable/disable the visit counter
+  enabled: true
+
+  # Path to the SQLite database file
+  dbPath: "data/visitors.db"

@@ -1,6 +1,7 @@
 .DS_Store
 ssh-server
 ssh-server-linux
+termfolio
 bin/
 .ssh/
 .cursor

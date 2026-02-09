@@ -10,13 +10,49 @@ import (
 )
 
 type Config struct {
-	SSH SSHConfig `yaml:"ssh"`
+	SSH     SSHConfig     `yaml:"ssh"`
+	Counter CounterConfig `yaml:"counter"`
 }
 
 type SSHConfig struct {
 	Port        int    `yaml:"port"`
 	Address     string `yaml:"address"`
 	HostKeyPath string `yaml:"hostKeyPath"`
+}
+
+type CounterConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	DBPath  string `yaml:"dbPath"`
+}
+
+func (c *CounterConfig) UnmarshalYAML(value *yaml.Node) error {
+	switch value.Kind {
+	case yaml.ScalarNode:
+		var enabled bool
+		if err := value.Decode(&enabled); err != nil {
+			return err
+		}
+		c.Enabled = enabled
+		return nil
+	case yaml.MappingNode:
+		type counterYAML struct {
+			Enabled *bool   `yaml:"enabled"`
+			DBPath  *string `yaml:"dbPath"`
+		}
+		var raw counterYAML
+		if err := value.Decode(&raw); err != nil {
+			return err
+		}
+		if raw.Enabled != nil {
+			c.Enabled = *raw.Enabled
+		}
+		if raw.DBPath != nil {
+			c.DBPath = *raw.DBPath
+		}
+		return nil
+	default:
+		return fmt.Errorf("invalid counter config")
+	}
 }
 
 // Load loads config from the specified path.
@@ -29,6 +65,10 @@ func Load(configPath string, userProvided bool) (*Config, error) {
 			Port:        2222,
 			Address:     "0.0.0.0",
 			HostKeyPath: ".ssh/host_ed25519",
+		},
+		Counter: CounterConfig{
+			Enabled: true,
+			DBPath:  "data/visitors.db",
 		},
 	}
 
@@ -43,6 +83,7 @@ func Load(configPath string, userProvided bool) (*Config, error) {
 			// Using default path and file doesn't exist—return defaults
 			applyEnvVarOverrides(cfg)
 			resolveHostKeyPath(cfg, configPath)
+			resolveCounterPath(cfg, configPath)
 			return cfg, nil
 		}
 		// Other read errors (permissions, etc.) are always errors
@@ -59,6 +100,7 @@ func Load(configPath string, userProvided bool) (*Config, error) {
 
 	// Resolve host key path if relative (relative to config file directory)
 	resolveHostKeyPath(cfg, configPath)
+	resolveCounterPath(cfg, configPath)
 
 	return cfg, nil
 }
@@ -93,6 +135,20 @@ func resolveHostKeyPath(cfg *Config, configPath string) {
 	}
 	baseDir := filepath.Dir(configPath)
 	cfg.SSH.HostKeyPath = filepath.Clean(filepath.Join(baseDir, cfg.SSH.HostKeyPath))
+}
+
+func resolveCounterPath(cfg *Config, configPath string) {
+	if cfg == nil {
+		return
+	}
+	if cfg.Counter.DBPath == "" || filepath.IsAbs(cfg.Counter.DBPath) {
+		return
+	}
+	if configPath == "" {
+		return
+	}
+	baseDir := filepath.Dir(configPath)
+	cfg.Counter.DBPath = filepath.Clean(filepath.Join(baseDir, cfg.Counter.DBPath))
 }
 
 func (cfg *SSHConfig) ListenAddr() string {
