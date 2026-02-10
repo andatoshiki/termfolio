@@ -38,6 +38,7 @@ archives:
         formats: [zip]
     files:
       - README.md
+      - license
 
 checksum:
   name_template: checksums.txt
