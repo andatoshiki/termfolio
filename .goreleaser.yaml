@@ -54,30 +54,3 @@ release:
   prerelease: auto
   header: |
     # {{ .Tag }} Changes
-
-homebrew_casks:
-  - name: termfolio
-    binary: termfolio
-    homepage: "https://github.com/andatoshiki/termfolio"
-    description: "SSH-based interactive portfolio application"
-    url:
-      template: "https://github.com/andatoshiki/termfolio/releases/download/{{ .Tag }}/termfolio-darwin-{{ if eq .Arch \"arm64\" }}aarch64{{ else }}x86-64{{ end }}-{{ .Tag }}.tar.gz"
-      verified: "github.com/andatoshiki/termfolio"
-    commit_msg_template: "brew cask update for termfolio version {{ .Tag }}"
-    directory: Casks
-    caveats: |
-      If you see a damaged app warning, run:
-        xattr -dr com.apple.quarantine $(brew --prefix)/Caskroom/termfolio/*/termfolio
-    hooks:
-      post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/termfolio"]
-          end
-    repository:
-      owner: andatoshiki
-      name: homebrew-tap
-      branch: main
-      pull_request:
-        enabled: true
-        draft: false
