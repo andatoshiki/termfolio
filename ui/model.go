@@ -297,7 +297,7 @@ func (m model) View() string {
 	case menuPage:
 		content = pages.RenderMenu(m.styles, m.menuCursor, m.logoSweepIndex, m.themeLabel(), m.visitorCount, boxWidth)
 	case aboutPage:
-		content = pages.RenderAbout(m.styles, m.aboutReveal, m.aboutScramble, m.themeLabel())
+		content = pages.RenderAbout(m.styles, m.aboutReveal, m.aboutScramble, m.themeLabel(), boxWidth)
 	case projectsPage:
 		content = pages.RenderProjects(m.styles, m.projectCursor, m.themeLabel())
 	case educationPage:

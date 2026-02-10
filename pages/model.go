@@ -201,7 +201,7 @@ func (m model) View() string {
 	case menuPage:
 		content = RenderMenu(m.styles, m.menuCursor, m.logoSweepIndex, themeLabel, m.visitorCount, boxWidth)
 	case aboutPage:
-		content = RenderAbout(m.styles, m.aboutReveal, m.aboutScramble, themeLabel)
+		content = RenderAbout(m.styles, m.aboutReveal, m.aboutScramble, themeLabel, boxWidth)
 	case projectsPage:
 		content = RenderProjects(m.styles, m.projectCursor, themeLabel)
 	case educationPage:
