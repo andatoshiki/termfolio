@@ -18,7 +18,7 @@ type Education struct {
 var educations = []Education{
 	{
 		Role:    "Computer Science, B.S.",
-		Company: "Northwestern University",
+		Company: "Northwestern",
 		Period:  "2025–present",
 		Desc:    "McCormick School of Engineering",
 		URL:     "https://www.northwestern.edu/",
