@@ -1,4 +1,4 @@
-APP_NAME := joe-ssh
+APP_NAME := termfolio
 BIN_DIR := bin
 HOST_KEY := .ssh/host_ed25519
 

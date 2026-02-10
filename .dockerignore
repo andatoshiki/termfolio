@@ -1,7 +1,0 @@
-# flyctl launch added from .gitignore
-**/.DS_Store
-**/ssh-server
-**/ssh-server-linux
-**/bin
-**/.ssh
-fly.toml

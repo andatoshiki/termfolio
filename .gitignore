@@ -2,9 +2,12 @@
 ssh-server
 ssh-server-linux
 termfolio
+web/.next/
 bin/
 .ssh/
 .cursor
 .agents
 ssh-tui
 *.db
+web
+data/
