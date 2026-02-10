@@ -30,6 +30,13 @@ The application includes menu-driven sections for about, projects, education, co
 - Local development is easiest on a non-privileged port such as `2222`.
 - If you bind to port `22`, elevated privileges or a free privileged port may be required.
 
+### 2.3: Bind to privileged ports on Linux
+If you want to run on a privileged port such as `22` without running the app as root, grant the built binary bind capability:
+
+```bash
+sudo setcap 'cap_net_bind_service=+ep' ./bin/termfolio
+```
+
 ## 3: Local development
 ### 3.1: Prepare configuration
 Use the example file for local development:
@@ -142,3 +149,7 @@ Print version:
 ```bash
 go run . -v
 ```
+
+## 8: License
+This project is licensed under the MIT License.
+See `/Users/andatoshiki/dev/github/termfolio/license` for the full text.
