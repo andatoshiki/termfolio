@@ -19,7 +19,7 @@ const (
 	menuPage page = iota
 	aboutPage
 	projectsPage
-	experiencePage
+	educationPage
 	contactPage
 	privacyPage
 	feedPage
@@ -29,7 +29,7 @@ type model struct {
 	currentPage     page
 	menuCursor      int
 	projectCursor   int
-	expCursor       int
+	eduCursor       int
 	aboutReveal     int
 	aboutScramble   int
 	visitorCount    int
@@ -56,7 +56,7 @@ func initialModel() model {
 		currentPage:     menuPage,
 		menuCursor:      0,
 		projectCursor:   0,
-		expCursor:       0,
+		eduCursor:       0,
 		aboutReveal:     0,
 		aboutScramble:   0,
 		visitorCount:    0,
@@ -172,9 +172,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.projectCursor > 0 {
 					m.projectCursor--
 				}
-			case experiencePage:
-				if m.expCursor > 0 {
-					m.expCursor--
+			case educationPage:
+				if m.eduCursor > 0 {
+					m.eduCursor--
 				}
 			case privacyPage:
 				if m.privacyCursor > 0 {
@@ -198,9 +198,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.projectCursor < len(pages.Projects())-1 {
 					m.projectCursor++
 				}
-			case experiencePage:
-				if m.expCursor < len(pages.Experiences())-1 {
-					m.expCursor++
+			case educationPage:
+				if m.eduCursor < len(pages.Educations())-1 {
+					m.eduCursor++
 				}
 			case privacyPage:
 				if m.privacyCursor < 1 {
@@ -226,16 +226,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.currentPage = projectsPage
 					return m, nil
 				case 2:
-					m.currentPage = experiencePage
+					m.currentPage = educationPage
 					return m, nil
 				case 3:
 					m.currentPage = contactPage
 					return m, nil
 				case 4:
-					m.currentPage = privacyPage
-					m.privacyCursor = 0
-					return m, nil
-				case 5:
 					m.currentPage = feedPage
 					m.feedCursor = 0
 					m.feedOffset = 0
@@ -244,6 +240,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.feedError = ""
 						return m, fetchFeedCmd()
 					}
+					return m, nil
+				case 5:
+					m.currentPage = privacyPage
+					m.privacyCursor = 0
 					return m, nil
 				}
 			}
@@ -290,17 +290,18 @@ func typewriterTickCmd() tea.Cmd {
 }
 
 func (m model) View() string {
+	boxWidth := min(m.width-4, 70)
 	var content string
 
 	switch m.currentPage {
 	case menuPage:
-		content = pages.RenderMenu(m.styles, m.menuCursor, m.logoSweepIndex, m.themeLabel(), m.visitorCount)
+		content = pages.RenderMenu(m.styles, m.menuCursor, m.logoSweepIndex, m.themeLabel(), m.visitorCount, boxWidth)
 	case aboutPage:
 		content = pages.RenderAbout(m.styles, m.aboutReveal, m.aboutScramble, m.themeLabel())
 	case projectsPage:
 		content = pages.RenderProjects(m.styles, m.projectCursor, m.themeLabel())
-	case experiencePage:
-		content = pages.RenderExperience(m.styles, m.expCursor, m.themeLabel())
+	case educationPage:
+		content = pages.RenderEducation(m.styles, m.eduCursor, m.themeLabel())
 	case contactPage:
 		content = pages.RenderContact(m.styles, m.themeLabel())
 	case privacyPage:
@@ -309,7 +310,6 @@ func (m model) View() string {
 		content = pages.RenderFeed(m.styles, m.feedItems, m.feedCursor, m.feedOffset, feedPageSize, m.feedLoading, m.feedError, m.themeLabel())
 	}
 
-	boxWidth := min(m.width-4, 70)
 	boxedContent := lipgloss.NewStyle().
 		Padding(1, 2).
 		Width(boxWidth).

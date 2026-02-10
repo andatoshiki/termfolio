@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/andatoshiki/termfolio/view"
+	"github.com/andatoshiki/termfolio/version"
 )
 
 const (
@@ -19,6 +20,11 @@ func RenderPrivacy(styles view.ThemeStyles, cursor int, trackingEnabled bool, tr
 
 	b.WriteString(styles.Title.Render("━━━ Privacy ━━━"))
 	b.WriteString("\n")
+
+	b.WriteString(styles.Content.Render(version.AppDesc))
+	b.WriteString("\n")
+	b.WriteString(styles.Subtle.Render("Version: v" + version.VersionString()))
+	b.WriteString("\n\n")
 
 	if !trackingAvailable {
 		b.WriteString(styles.Content.Render("Tracking is disabled on this server."))

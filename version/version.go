@@ -1,12 +1,12 @@
-package main
+package version
 
 const (
 	Major = 0
 	Minor = 1
 	Patch = 0
 
-	AppName = "joe-ssh"
-	AppDesc = "SSH-based interactive portfolio application"
+	AppName = "termfolio"
+	AppDesc = "SSH-based interactive portfolio application served over SSH, built with Go, Wish, and Bubble Tea."
 )
 
 func Version() string {

@@ -17,6 +17,7 @@ import (
 	"github.com/andatoshiki/termfolio/config"
 	"github.com/andatoshiki/termfolio/counter"
 	"github.com/andatoshiki/termfolio/ui"
+	"github.com/andatoshiki/termfolio/version"
 )
 
 func main() {
@@ -27,7 +28,7 @@ func main() {
 
 	// Show version and exit if -v flag is set
 	if *showVersion {
-		fmt.Println(VersionInfo())
+		fmt.Println(version.VersionInfo())
 		os.Exit(0)
 	}
 

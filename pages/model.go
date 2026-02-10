@@ -17,7 +17,7 @@ const (
 	menuPage page = iota
 	aboutPage
 	projectsPage
-	experiencePage
+	educationPage
 	contactPage
 	privacyPage
 	feedPage
@@ -27,7 +27,7 @@ type model struct {
 	currentPage    page
 	menuCursor     int
 	projectCursor  int
-	expCursor      int
+	eduCursor      int
 	aboutReveal    int
 	aboutScramble  int
 	visitorCount   int
@@ -44,7 +44,7 @@ func initialModel() model {
 		currentPage:    menuPage,
 		menuCursor:     0,
 		projectCursor:  0,
-		expCursor:      0,
+		eduCursor:      0,
 		aboutReveal:    0,
 		aboutScramble:  0,
 		visitorCount:   0,
@@ -115,9 +115,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.projectCursor > 0 {
 					m.projectCursor--
 				}
-			case experiencePage:
-				if m.expCursor > 0 {
-					m.expCursor--
+			case educationPage:
+				if m.eduCursor > 0 {
+					m.eduCursor--
 				}
 			}
 			return m, nil
@@ -132,9 +132,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.projectCursor < len(projects)-1 {
 					m.projectCursor++
 				}
-			case experiencePage:
-				if m.expCursor < len(experiences)-1 {
-					m.expCursor++
+			case educationPage:
+				if m.eduCursor < len(educations)-1 {
+					m.eduCursor++
 				}
 			}
 			return m, nil
@@ -150,13 +150,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case 1:
 					m.currentPage = projectsPage
 				case 2:
-					m.currentPage = experiencePage
+					m.currentPage = educationPage
 				case 3:
 					m.currentPage = contactPage
 				case 4:
-					m.currentPage = privacyPage
-				case 5:
 					m.currentPage = feedPage
+				case 5:
+					m.currentPage = privacyPage
 				}
 			}
 			return m, nil
@@ -194,17 +194,18 @@ const typewriterTick = 40 * time.Millisecond
 
 func (m model) View() string {
 	themeLabel := m.themeLabel()
+	boxWidth := min(m.width-4, 70)
 	var content string
 
 	switch m.currentPage {
 	case menuPage:
-		content = RenderMenu(m.styles, m.menuCursor, m.logoSweepIndex, themeLabel, m.visitorCount)
+		content = RenderMenu(m.styles, m.menuCursor, m.logoSweepIndex, themeLabel, m.visitorCount, boxWidth)
 	case aboutPage:
 		content = RenderAbout(m.styles, m.aboutReveal, m.aboutScramble, themeLabel)
 	case projectsPage:
 		content = RenderProjects(m.styles, m.projectCursor, themeLabel)
-	case experiencePage:
-		content = RenderExperience(m.styles, m.expCursor, themeLabel)
+	case educationPage:
+		content = RenderEducation(m.styles, m.eduCursor, themeLabel)
 	case contactPage:
 		content = RenderContact(m.styles, themeLabel)
 	case privacyPage:
@@ -213,7 +214,6 @@ func (m model) View() string {
 		content = RenderFeed(m.styles, nil, 0, 0, 0, false, "", themeLabel)
 	}
 
-	boxWidth := min(m.width-4, 70)
 	boxedContent := lipgloss.NewStyle().
 		Padding(1, 2).
 		Width(boxWidth).

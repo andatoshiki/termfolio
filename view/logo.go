@@ -2,22 +2,19 @@ package view
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
 var asciiLogoLines = []string{
-	`             __       __           __      `,
-	`            /\ \     /\ \         /\ \    `,
-	`            \ \ \   /  \ \       /  \ \   `,
-	`            /\ \_\ / /\ \ \     / /\ \ \  `,
-	`           / /\/_// / /\ \ \   / / /\ \_\ `,
-	`  __      / / /  / / /  \ \_\ / /_/_ \/_/ `,
-	` /\ \    / / /  / / /   / / // /____/\    `,
-	` \ \_\  / / /  / / /   / / // /\____\/    `,
-	` / / /_/ / /  / / /___/ / // / /______    `,
-	`/ / /__\/ /  / / /____\/ // / /_______\   `,
-	`\/_______/   \/_________/ \/__________/   `,
+	`                         d8b        d8, d8b         d8,`,
+	`   d8P                   ?88       ` + "`" + `8P  ?88        ` + "`" + `8P `,
+	`d888888P                  88b            88b           `,
+	`  ?88'   d8888b  .d888b,  888888b   88b  888  d88'  88b`,
+	`  88P   d8P' ?88 ?8b,     88P ` + "`" + `?8b  88P  888bd8P'   88P`,
+	`  88b   88b  d88   ` + "`" + `?8b  d88   88P d88  d88888b    d88 `,
+	`  ` + "`" + `?8b  ` + "`" + `?8888P'` + "`" + `?888P' d88'   88bd88' d88' ` + "`" + `?88b,d88' `,
 }
 
 func RenderGradientLogo(width int, sweepIndex int, baseStyle, snakeStyle lipgloss.Style) string {
@@ -27,8 +24,9 @@ func RenderGradientLogo(width int, sweepIndex int, baseStyle, snakeStyle lipglos
 
 	maxLineLen := 0
 	for i := 0; i < linesToShow; i++ {
-		if len(asciiLogoLines[i]) > maxLineLen {
-			maxLineLen = len(asciiLogoLines[i])
+		lineLen := utf8.RuneCountInString(asciiLogoLines[i])
+		if lineLen > maxLineLen {
+			maxLineLen = lineLen
 		}
 	}
 
@@ -36,9 +34,10 @@ func RenderGradientLogo(width int, sweepIndex int, baseStyle, snakeStyle lipglos
 		return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render("")
 	}
 
-	pad := 1
-	gridW := maxLineLen + pad*2
-	gridH := linesToShow + pad*2
+	padY := 1
+	padX := 2
+	gridW := maxLineLen + padX*2
+	gridH := linesToShow + padY*2
 
 	baseGrid := make([][]rune, gridH)
 	for y := 0; y < gridH; y++ {
@@ -52,7 +51,7 @@ func RenderGradientLogo(width int, sweepIndex int, baseStyle, snakeStyle lipglos
 	for i := 0; i < linesToShow; i++ {
 		lineRunes := []rune(asciiLogoLines[i])
 		for j, r := range lineRunes {
-			baseGrid[pad+i][pad+j] = r
+			baseGrid[padY+i][padX+j] = r
 		}
 	}
 
@@ -81,7 +80,10 @@ func RenderGradientLogo(width int, sweepIndex int, baseStyle, snakeStyle lipglos
 		return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render("")
 	}
 
-	snakeLen := 14
+	snakeLen := pathLen / 8
+	if snakeLen < 6 {
+		snakeLen = 6
+	}
 	if snakeLen > pathLen {
 		snakeLen = pathLen
 	}

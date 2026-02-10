@@ -7,16 +7,49 @@ import (
 	"github.com/andatoshiki/termfolio/view"
 )
 
-var aboutContent = `
-Hey, I'm Joe, a software developer interested in building entertaining or useful things.
-
-Currently exploring React Internals and distributed systems.
-`
+var aboutContent = "Hey there, I'm Anda Toshiki -- call me kiki for short (like the protagonist from Kiki's Delivery Service by Hayao Miyazaki). I'm a Maho ShouJo (魔法少女) who loves anime, drinks monster, writes code, documents tutorials, takes photos, eats burgers, and stays up way too late. I'm into clean UI, useful tooling, and anything that makes dev life a little smoother.\n\nPronounced as AHN-dah TOH-shee-kee in case you find my name obscure to read out. I am currently an undergraduate student at ASU. I'm the founder of Toshiki Dev, my first organizational community focused on building small, functional utility components and webapps for real needs, both mine and others'. I maintain the community alongside my two cats 😺 (玉ちゃん & 桃ちゃん), who are definitely cute girls.\n"
 
 var aboutRunes = []rune(aboutContent)
 var scrambleRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/~")
 
 const settleDurationTicks = 8
+
+func aboutSettled(count int, scrambleTick int) bool {
+	total := len(aboutRunes)
+	if count > total {
+		count = total
+	}
+	return count >= total && scrambleTick >= count+AboutSettleTicks()
+}
+
+func aboutStyled(styles view.ThemeStyles) string {
+	var b strings.Builder
+
+	normal := styles.Content
+	bold := styles.Content.Copy().Bold(true)
+	italic := styles.Content.Copy().Italic(true)
+	link := styles.Accent.Copy().Underline(true)
+
+	b.WriteString(normal.Render("Hey there, I'm "))
+	b.WriteString(bold.Render("Anda Toshiki"))
+	b.WriteString(normal.Render(" -- call me "))
+	b.WriteString(italic.Render("kiki"))
+	b.WriteString(normal.Render(" for short (like the protagonist from "))
+	b.WriteString(view.ClickableLink(link.Render("Kiki's Delivery Service"), "https://en.wikipedia.org/wiki/Kiki%27s_Delivery_Service"))
+	b.WriteString(normal.Render(" by Hayao Miyazaki). I'm a "))
+	b.WriteString(italic.Render("Maho ShouJo"))
+	b.WriteString(normal.Render(" (魔法少女) who loves anime, drinks monster, writes code, documents tutorials, takes photos, eats burgers, and stays up way too late. I'm into clean UI, useful tooling, and anything that makes dev life a little smoother. "))
+	b.WriteString("\n\n")
+	b.WriteString(normal.Render("Pronounced as "))
+	b.WriteString(bold.Render("AHN-dah TOH-shee-kee"))
+	b.WriteString(normal.Render(" in case you find my name obscure to read out. I am currently an undergraduate student at "))
+	b.WriteString(view.ClickableLink(link.Render("ASU"), "https://asu.edu"))
+	b.WriteString(normal.Render(". I'm the founder of "))
+	b.WriteString(view.ClickableLink(link.Render("Toshiki Dev"), "https://github.com/toshikidev"))
+	b.WriteString(normal.Render(", my first organizational community focused on building small, functional utility components and webapps for real needs, both mine and others'. I maintain the community alongside my two cats 😺 (玉ちゃん & 桃ちゃん), who are definitely cute girls."))
+
+	return b.String()
+}
 
 func aboutVisible(count int, scrambleTick int) string {
 	if count <= 0 {
@@ -27,7 +60,7 @@ func aboutVisible(count int, scrambleTick int) string {
 		count = total
 	}
 
-	if count >= total && scrambleTick >= count+AboutSettleTicks() {
+	if aboutSettled(count, scrambleTick) {
 		return aboutContent
 	}
 
@@ -91,7 +124,11 @@ func RenderAbout(styles view.ThemeStyles, revealCount int, scrambleTick int, the
 
 	b.WriteString(styles.Title.Render("━━━ About Me ━━━"))
 	b.WriteString("\n")
-	b.WriteString(styles.Content.Render(aboutVisible(revealCount, scrambleTick)))
+	if aboutSettled(revealCount, scrambleTick) {
+		b.WriteString(aboutStyled(styles))
+	} else {
+		b.WriteString(styles.Content.Render(aboutVisible(revealCount, scrambleTick)))
+	}
 	b.WriteString("\n")
 	b.WriteString(styles.Help.Render(themeLabel + " • esc: back to menu"))
 

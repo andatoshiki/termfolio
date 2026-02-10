@@ -9,14 +9,14 @@ import (
 	"github.com/andatoshiki/termfolio/view"
 )
 
-var menuItems = []string{"About", "Projects", "Experience", "Contact", "Privacy", "Feed"}
+var menuItems = []string{"About", "Projects", "Education", "Contact", "Feed", "Privacy"}
 var menuDescriptions = []string{
 	"Who I am",
 	"Selected work",
-	"Roles and timeline",
+	"Academic timeline",
 	"Get in touch",
-	"Tracking control",
 	"Latest posts",
+	"Tracking control",
 }
 
 const (
@@ -28,17 +28,23 @@ func MenuItems() []string {
 	return menuItems
 }
 
-func RenderMenu(styles view.ThemeStyles, menuCursor int, logoSweepIndex int, themeLabel string, visitorCount int) string {
+func RenderMenu(styles view.ThemeStyles, menuCursor int, logoSweepIndex int, themeLabel string, visitorCount int, boxWidth int) string {
 	var b strings.Builder
 
-	b.WriteString(view.RenderGradientLogo(60, logoSweepIndex, styles.LogoBase, styles.LogoSnake))
+	logoWidth := 60
+	b.WriteString(view.RenderGradientLogo(logoWidth, logoSweepIndex, styles.LogoBase, styles.LogoSnake))
+
+	infoLine := ""
 	if visitorCount > 0 {
-		b.WriteString("\n")
-		b.WriteString(styles.Subtle.Render(fmt.Sprintf("Visits: %d", visitorCount)))
-		b.WriteString("\n\n")
-	} else {
-		b.WriteString("\n\n")
+		infoLine = fmt.Sprintf("Visits: %d", visitorCount)
 	}
+
+	b.WriteString("\n")
+	if boxWidth <= 0 {
+		boxWidth = logoWidth
+	}
+	b.WriteString(styles.Subtle.Copy().Width(boxWidth).Align(lipgloss.Left).Render(infoLine))
+	b.WriteString("\n\n")
 
 	for i, item := range menuItems {
 		cursor := "  "
@@ -69,8 +75,9 @@ func RenderMenu(styles view.ThemeStyles, menuCursor int, logoSweepIndex int, the
 		b.WriteString("\n")
 	}
 
-	help := "↑/↓: navigate • enter: select • esc/backspace: menu • q: quit • " + themeLabel
-	b.WriteString(styles.Help.Render("\n" + help))
+	helpMain := "↑/↓: navigate • enter: select • esc/backspace: menu • q: quit"
+	helpTheme := "t: " + themeLabel[len("t: "):]
+	b.WriteString(styles.Help.Render("\n" + helpMain + "\n" + helpTheme))
 
 	return b.String()
 }

@@ -3,7 +3,9 @@ package ui
 import (
 	"context"
 	"fmt"
+	"html"
 	"net/http"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -13,7 +15,7 @@ import (
 )
 
 const (
-	feedURL          = "https://www.toshiki.dev/rss.xml"
+	feedURL          = "https://note.toshiki.dev/feed.xml"
 	feedFetchTimeout = 5 * time.Second
 	feedCacheTTL     = 15 * time.Minute
 	feedMaxItems     = 25
@@ -55,13 +57,13 @@ func fetchFeedCmd() tea.Cmd {
 			if item == nil {
 				continue
 			}
-			title := item.Title
+			title := normalizeFeedText(item.Title)
 			if title == "" {
 				title = "Untitled"
 			}
-			link := item.Link
+			link := normalizeFeedText(item.Link)
 			if link == "" {
-				link = feed.Link
+				link = normalizeFeedText(feed.Link)
 			}
 			date := ""
 			if item.PublishedParsed != nil {
@@ -81,6 +83,28 @@ func fetchFeedCmd() tea.Cmd {
 
 		return feedMsg{items: items}
 	}
+}
+
+func normalizeFeedText(value string) string {
+	if value == "" {
+		return value
+	}
+	value = unescapeHTMLEntities(value)
+	value = strings.ReplaceAll(value, "\u00a0", " ")
+	value = strings.ReplaceAll(value, "\u200b", "")
+	return value
+}
+
+func unescapeHTMLEntities(value string) string {
+	const maxPasses = 3
+	for i := 0; i < maxPasses; i++ {
+		unescaped := html.UnescapeString(value)
+		if unescaped == value {
+			break
+		}
+		value = unescaped
+	}
+	return value
 }
 
 func shouldFetchFeed(m model) bool {
