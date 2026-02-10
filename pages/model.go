@@ -27,7 +27,6 @@ const (
 type model struct {
 	currentPage     page
 	splashReveal    int
-	splashBlinkOn   bool
 	splashBlinkStep int
 	menuCursor      int
 	projectCursor   int
@@ -47,7 +46,6 @@ func initialModel() model {
 	return model{
 		currentPage:     splashPage,
 		splashReveal:    0,
-		splashBlinkOn:   true,
 		splashBlinkStep: 0,
 		menuCursor:      0,
 		projectCursor:   0,
@@ -77,9 +75,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tickMsg:
 		if m.currentPage == splashPage {
 			m.splashBlinkStep++
-			if m.splashBlinkStep >= splashBlinkIntervalSteps {
+			if m.splashBlinkStep >= 1_000_000 {
 				m.splashBlinkStep = 0
-				m.splashBlinkOn = !m.splashBlinkOn
 			}
 			if m.splashReveal < SplashRuneCount() {
 				m.splashReveal++
@@ -211,7 +208,6 @@ func tickCmd() tea.Cmd {
 }
 
 const splashTick = 45 * time.Millisecond
-const splashBlinkIntervalSteps = 7
 
 func typewriterTickCmd() tea.Cmd {
 	return tea.Tick(typewriterTick, func(t time.Time) tea.Msg {
@@ -234,7 +230,7 @@ func (m model) View() string {
 
 	switch m.currentPage {
 	case splashPage:
-		content = RenderSplash(m.styles, m.splashReveal, m.splashBlinkOn, boxWidth)
+		content = RenderSplash(m.styles, m.splashReveal, m.splashBlinkStep, boxWidth)
 	case menuPage:
 		content = RenderMenu(m.styles, m.menuCursor, m.logoSweepIndex, themeLabel, m.visitorCount, boxWidth)
 	case aboutPage:
