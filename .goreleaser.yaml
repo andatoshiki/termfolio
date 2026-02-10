@@ -48,7 +48,7 @@ snapshot:
 
 changelog:
   use: git
-  format: "- [`{{ .SHA }}`](https://github.com/andatoshiki/termfolio/commit/{{ .SHA }}): {{ .Message }}"
+  format: "[`{{ .SHA }}`](https://github.com/andatoshiki/termfolio/commit/{{ .SHA }}): {{ .Message }}"
   abbrev: 7
 
 release:

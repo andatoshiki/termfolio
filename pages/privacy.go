@@ -6,8 +6,8 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/andatoshiki/termfolio/view"
 	"github.com/andatoshiki/termfolio/version"
+	"github.com/andatoshiki/termfolio/view"
 )
 
 const (
