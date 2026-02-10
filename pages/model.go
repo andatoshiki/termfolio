@@ -14,7 +14,8 @@ type tickMsg time.Time
 type page int
 
 const (
-	menuPage page = iota
+	splashPage page = iota
+	menuPage
 	aboutPage
 	projectsPage
 	educationPage
@@ -24,35 +25,41 @@ const (
 )
 
 type model struct {
-	currentPage    page
-	menuCursor     int
-	projectCursor  int
-	eduCursor      int
-	aboutReveal    int
-	aboutScramble  int
-	visitorCount   int
-	width          int
-	height         int
-	logoSweepIndex int
-	themeIndex     int
-	styles         view.ThemeStyles
+	currentPage     page
+	splashReveal    int
+	splashBlinkOn   bool
+	splashBlinkStep int
+	menuCursor      int
+	projectCursor   int
+	eduCursor       int
+	aboutReveal     int
+	aboutScramble   int
+	visitorCount    int
+	width           int
+	height          int
+	logoSweepIndex  int
+	themeIndex      int
+	styles          view.ThemeStyles
 }
 
 func initialModel() model {
 	initialPalette := view.ThemeAt(0)
 	return model{
-		currentPage:    menuPage,
-		menuCursor:     0,
-		projectCursor:  0,
-		eduCursor:      0,
-		aboutReveal:    0,
-		aboutScramble:  0,
-		visitorCount:   0,
-		width:          80,
-		height:         24,
-		logoSweepIndex: 0,
-		themeIndex:     0,
-		styles:         view.NewThemeStyles(initialPalette),
+		currentPage:     splashPage,
+		splashReveal:    0,
+		splashBlinkOn:   true,
+		splashBlinkStep: 0,
+		menuCursor:      0,
+		projectCursor:   0,
+		eduCursor:       0,
+		aboutReveal:     0,
+		aboutScramble:   0,
+		visitorCount:    0,
+		width:           80,
+		height:          24,
+		logoSweepIndex:  0,
+		themeIndex:      0,
+		styles:          view.NewThemeStyles(initialPalette),
 	}
 }
 
@@ -61,13 +68,24 @@ func NewModel() tea.Model {
 }
 
 func (m model) Init() tea.Cmd {
-	return tickCmd()
+	return splashTickCmd()
 }
 
 // Controls
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tickMsg:
+		if m.currentPage == splashPage {
+			m.splashBlinkStep++
+			if m.splashBlinkStep >= splashBlinkIntervalSteps {
+				m.splashBlinkStep = 0
+				m.splashBlinkOn = !m.splashBlinkOn
+			}
+			if m.splashReveal < SplashRuneCount() {
+				m.splashReveal++
+			}
+			return m, splashTickCmd()
+		}
 		if m.currentPage == menuPage {
 			m.logoSweepIndex++
 			return m, tickCmd()
@@ -93,13 +111,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
-			if m.currentPage == menuPage {
+			if m.currentPage == menuPage || m.currentPage == splashPage {
 				return m, tea.Quit
 			}
 			m.currentPage = menuPage
 			return m, tickCmd()
 
 		case "esc", "backspace":
+			if m.currentPage == splashPage {
+				return m, nil
+			}
 			if m.currentPage != menuPage {
 				m.currentPage = menuPage
 			}
@@ -140,6 +161,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "enter", " ":
+			if m.currentPage == splashPage {
+				m.currentPage = menuPage
+				m.logoSweepIndex = 0
+				return m, tickCmd()
+			}
 			if m.currentPage == menuPage {
 				switch m.menuCursor {
 				case 0:
@@ -184,6 +210,9 @@ func tickCmd() tea.Cmd {
 	})
 }
 
+const splashTick = 45 * time.Millisecond
+const splashBlinkIntervalSteps = 7
+
 func typewriterTickCmd() tea.Cmd {
 	return tea.Tick(typewriterTick, func(t time.Time) tea.Msg {
 		return tickMsg(t)
@@ -192,12 +221,20 @@ func typewriterTickCmd() tea.Cmd {
 
 const typewriterTick = 40 * time.Millisecond
 
+func splashTickCmd() tea.Cmd {
+	return tea.Tick(splashTick, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
+}
+
 func (m model) View() string {
 	themeLabel := m.themeLabel()
 	boxWidth := min(m.width-4, 70)
 	var content string
 
 	switch m.currentPage {
+	case splashPage:
+		content = RenderSplash(m.styles, m.splashReveal, m.splashBlinkOn, boxWidth)
 	case menuPage:
 		content = RenderMenu(m.styles, m.menuCursor, m.logoSweepIndex, themeLabel, m.visitorCount, boxWidth)
 	case aboutPage:
