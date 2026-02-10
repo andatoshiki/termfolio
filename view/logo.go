@@ -17,6 +17,109 @@ var asciiLogoLines = []string{
 	`  ` + "`" + `?8b  ` + "`" + `?8888P'` + "`" + `?888P' d88'   88bd88' d88' ` + "`" + `?88b,d88' `,
 }
 
+type logoCell struct {
+	row int
+	col int
+	ch  rune
+}
+
+type logoTypewriterData struct {
+	width int
+	lines [][]rune
+	order []logoCell
+}
+
+var typewriterLogoData = buildTypewriterLogoData()
+
+func buildTypewriterLogoData() logoTypewriterData {
+	lines := make([][]rune, len(asciiLogoLines))
+	width := 0
+	for i := 0; i < len(asciiLogoLines); i++ {
+		lines[i] = []rune(asciiLogoLines[i])
+		if len(lines[i]) > width {
+			width = len(lines[i])
+		}
+	}
+
+	perRow := make([][]logoCell, len(lines))
+	maxRowCells := 0
+	for row := 0; row < len(lines); row++ {
+		for col, ch := range lines[row] {
+			if ch == ' ' {
+				continue
+			}
+			perRow[row] = append(perRow[row], logoCell{row: row, col: col, ch: ch})
+		}
+		if len(perRow[row]) > maxRowCells {
+			maxRowCells = len(perRow[row])
+		}
+	}
+
+	order := make([]logoCell, 0, maxRowCells*len(lines))
+	for i := 0; i < maxRowCells; i++ {
+		for row := 0; row < len(perRow); row++ {
+			if i < len(perRow[row]) {
+				order = append(order, perRow[row][i])
+			}
+		}
+	}
+
+	return logoTypewriterData{
+		width: width,
+		lines: lines,
+		order: order,
+	}
+}
+
+func LogoTypewriterRuneCount() int {
+	return len(typewriterLogoData.order)
+}
+
+func RenderTypewriterLogo(width int, revealCount int, logoStyle lipgloss.Style) string {
+	if revealCount < 0 {
+		revealCount = 0
+	}
+	if revealCount > len(typewriterLogoData.order) {
+		revealCount = len(typewriterLogoData.order)
+	}
+
+	var b strings.Builder
+	visible := make([][]bool, len(typewriterLogoData.lines))
+	for row := 0; row < len(visible); row++ {
+		visible[row] = make([]bool, typewriterLogoData.width)
+	}
+
+	for i := 0; i < revealCount; i++ {
+		cell := typewriterLogoData.order[i]
+		visible[cell.row][cell.col] = true
+	}
+
+	for row := 0; row < len(typewriterLogoData.lines); row++ {
+		line := typewriterLogoData.lines[row]
+		for col := 0; col < typewriterLogoData.width; col++ {
+			if col >= len(line) {
+				b.WriteRune(' ')
+				continue
+			}
+			ch := line[col]
+			if ch == ' ' {
+				b.WriteRune(' ')
+				continue
+			}
+			if visible[row][col] {
+				b.WriteString(logoStyle.Render(string(ch)))
+				continue
+			}
+			b.WriteRune(' ')
+		}
+		if row < len(typewriterLogoData.lines)-1 {
+			b.WriteRune('\n')
+		}
+	}
+
+	return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(b.String())
+}
+
 func RenderGradientLogo(width int, sweepIndex int, baseStyle, snakeStyle lipgloss.Style) string {
 	var result strings.Builder
 

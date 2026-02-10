@@ -17,17 +17,26 @@ const splashOpenSourcePrefix = "open sourced on "
 const splashOpenSourceLabel = "github"
 const splashOpenSourceLink = "https://github.com/andatoshiki/termfolio"
 const splashCommandBar = "enter: continue"
-const splashTickMillis = 45
+const splashTickMillis = 40
 const splashBlinkIntervalMillis = 500
 
 var splashRunes = []rune(splashIntroText)
+var splashLogoTypewriterRunes = view.LogoTypewriterRuneCount()
 
-func SplashRuneCount() int {
+func SplashLogoRuneCount() int {
+	return splashLogoTypewriterRunes
+}
+
+func SplashTextRuneCount() int {
 	return len(splashRunes)
 }
 
+func SplashRuneCount() int {
+	return SplashLogoRuneCount() + SplashTextRuneCount()
+}
+
 func RenderSplash(styles view.ThemeStyles, revealCount int, blinkStep int, boxWidth int) string {
-	total := len(splashRunes)
+	total := SplashRuneCount()
 	if revealCount < 0 {
 		revealCount = 0
 	}
@@ -36,13 +45,28 @@ func RenderSplash(styles view.ThemeStyles, revealCount int, blinkStep int, boxWi
 	}
 
 	contentWidth := splashContentWidth(boxWidth)
-	text := renderSplashText(styles, revealCount, total)
+	logoCount := SplashLogoRuneCount()
+	logoReveal := revealCount
+	if logoReveal > logoCount {
+		logoReveal = logoCount
+	}
+	textReveal := revealCount - logoCount
+	if textReveal < 0 {
+		textReveal = 0
+	}
+
+	textTotal := SplashTextRuneCount()
+	text := renderSplashText(styles, textReveal, textTotal)
 	cursor := ""
-	if revealCount >= total {
+	if textReveal >= textTotal {
 		cursor = " " + renderSplashCursor(styles, blinkStep)
 	}
 
 	var b strings.Builder
+	const logoWidth = 60
+	b.WriteString(view.RenderTypewriterLogo(logoWidth, logoReveal, styles.LogoBase))
+	b.WriteString("\n\n")
+
 	line := text + cursor
 	b.WriteString(lipgloss.NewStyle().Width(contentWidth).Align(lipgloss.Center).Render(line))
 	b.WriteString("\n")

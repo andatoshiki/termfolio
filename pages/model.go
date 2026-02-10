@@ -78,8 +78,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.splashBlinkStep >= 1_000_000 {
 				m.splashBlinkStep = 0
 			}
-			if m.splashReveal < SplashRuneCount() {
-				m.splashReveal++
+			logoTotal := SplashLogoRuneCount()
+			total := SplashRuneCount()
+			if m.splashReveal < logoTotal {
+				m.splashReveal += splashLogoRevealStep
+				if m.splashReveal > logoTotal {
+					m.splashReveal = logoTotal
+				}
+			} else if m.splashReveal < total {
+				if m.splashBlinkStep%splashTextRevealTickDivisor == 0 {
+					m.splashReveal++
+				}
 			}
 			return m, splashTickCmd()
 		}
@@ -207,7 +216,11 @@ func tickCmd() tea.Cmd {
 	})
 }
 
-const splashTick = 45 * time.Millisecond
+const splashTick = 40 * time.Millisecond
+
+const splashLogoRevealStep = 3
+
+const splashTextRevealTickDivisor = 1
 
 func typewriterTickCmd() tea.Cmd {
 	return tea.Tick(typewriterTick, func(t time.Time) tea.Msg {

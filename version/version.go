@@ -3,7 +3,7 @@ package version
 const (
 	Major = 0
 	Minor = 1
-	Patch = 3
+	Patch = 4
 
 	AppName = "termfolio"
 	AppDesc = "SSH-based interactive portfolio application served over SSH, built with Go, Wish, and Bubble Tea."

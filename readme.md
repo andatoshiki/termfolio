@@ -142,7 +142,7 @@ entrypoint.sh container startup and host key bootstrap
 Version constants are defined in `version/version.go`.
 At this snapshot:
 - App name: `termfolio`
-- Version: `0.1.3`
+- Version: `0.1.4`
 
 Print version:
 
