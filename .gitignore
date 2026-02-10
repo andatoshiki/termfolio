@@ -11,3 +11,5 @@ ssh-tui
 *.db
 web
 data/
+config.yaml
+config.yml
