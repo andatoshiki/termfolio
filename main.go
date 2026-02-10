@@ -63,10 +63,6 @@ func main() {
 		log.Fatalf("Failed to ensure host key: %v", err)
 	}
 
-	publicKeyAuth := func(ctx ssh.Context, key ssh.PublicKey) bool {
-		return true
-	}
-
 	teaHandler := func(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 		visitorCount := 0
 		trackingEnabled := counterStore != nil
@@ -106,7 +102,6 @@ func main() {
 	s, err := wish.NewServer(
 		wish.WithAddress(cfg.SSH.ListenAddr()),
 		wish.WithHostKeyPath(cfg.SSH.HostKeyPath),
-		wish.WithPublicKeyAuth(publicKeyAuth),
 		wish.WithMiddleware(
 			bubbletea.Middleware(teaHandler),
 		),
