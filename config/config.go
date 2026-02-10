@@ -15,9 +15,11 @@ type Config struct {
 }
 
 type SSHConfig struct {
-	Port        int    `yaml:"port"`
-	Address     string `yaml:"address"`
-	HostKeyPath string `yaml:"hostKeyPath"`
+	Port           int    `yaml:"port"`
+	Address        string `yaml:"address"`
+	HostKeyPath    string `yaml:"hostKeyPath"`
+	AuthMode       string `yaml:"authMode"`       // "none", "authorized_keys", or "allow_all"
+	AuthorizedKeys string `yaml:"authorizedKeys"` // Path to authorized_keys file
 }
 
 type CounterConfig struct {
@@ -62,9 +64,11 @@ func Load(configPath string, userProvided bool) (*Config, error) {
 	// Start with defaults
 	cfg := &Config{
 		SSH: SSHConfig{
-			Port:        2222,
-			Address:     "0.0.0.0",
-			HostKeyPath: ".ssh/host_ed25519",
+			Port:           2222,
+			Address:        "0.0.0.0",
+			HostKeyPath:    ".ssh/host_ed25519",
+			AuthMode:       "none",
+			AuthorizedKeys: "",
 		},
 		Counter: CounterConfig{
 			Enabled: true,
@@ -98,9 +102,15 @@ func Load(configPath string, userProvided bool) (*Config, error) {
 	// Environment variables override everything
 	applyEnvVarOverrides(cfg)
 
+	// Validate auth mode
+	if err := validateAuthMode(cfg); err != nil {
+		return nil, err
+	}
+
 	// Resolve host key path if relative (relative to config file directory)
 	resolveHostKeyPath(cfg, configPath)
 	resolveCounterPath(cfg, configPath)
+	resolveAuthorizedKeysPath(cfg, configPath)
 
 	return cfg, nil
 }
@@ -120,6 +130,14 @@ func applyEnvVarOverrides(cfg *Config) {
 
 	if hostKeyPath := os.Getenv("SSH_HOST_KEY_PATH"); hostKeyPath != "" {
 		cfg.SSH.HostKeyPath = hostKeyPath
+	}
+
+	if authMode := os.Getenv("SSH_AUTH_MODE"); authMode != "" {
+		cfg.SSH.AuthMode = authMode
+	}
+
+	if authorizedKeys := os.Getenv("SSH_AUTHORIZED_KEYS"); authorizedKeys != "" {
+		cfg.SSH.AuthorizedKeys = authorizedKeys
 	}
 }
 
@@ -153,4 +171,43 @@ func resolveCounterPath(cfg *Config, configPath string) {
 
 func (cfg *SSHConfig) ListenAddr() string {
 	return fmt.Sprintf("%s:%d", cfg.Address, cfg.Port)
+}
+
+// validateAuthMode validates the authentication mode configuration
+func validateAuthMode(cfg *Config) error {
+	if cfg == nil {
+		return fmt.Errorf("config is nil")
+	}
+
+	mode := cfg.SSH.AuthMode
+	switch mode {
+	case "none", "allow_all", "authorized_keys":
+		// Valid modes
+	case "":
+		// Empty defaults to "none"
+		cfg.SSH.AuthMode = "none"
+	default:
+		return fmt.Errorf("invalid auth mode %q: must be one of: none, allow_all, authorized_keys", mode)
+	}
+
+	// If using authorized_keys mode, ensure the path is set
+	if cfg.SSH.AuthMode == "authorized_keys" && cfg.SSH.AuthorizedKeys == "" {
+		return fmt.Errorf("authorized_keys mode requires authorizedKeys path to be set")
+	}
+
+	return nil
+}
+
+func resolveAuthorizedKeysPath(cfg *Config, configPath string) {
+	if cfg == nil {
+		return
+	}
+	if cfg.SSH.AuthorizedKeys == "" || filepath.IsAbs(cfg.SSH.AuthorizedKeys) {
+		return
+	}
+	if configPath == "" {
+		return
+	}
+	baseDir := filepath.Dir(configPath)
+	cfg.SSH.AuthorizedKeys = filepath.Clean(filepath.Join(baseDir, cfg.SSH.AuthorizedKeys))
 }

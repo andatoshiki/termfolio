@@ -7,6 +7,9 @@ ssh:
   
   # Path to the SSH host key (will be generated if not present)
   hostKeyPath: ".ssh/host_ed25519"
+  
+  # Authentication mode - "none" is recommended for public portfolios
+  authMode: "none"
 
 counter:
   # You can also set "counter: false" to disable entirely.

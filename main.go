@@ -14,6 +14,7 @@ import (
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/muesli/termenv"
 
+	"github.com/andatoshiki/termfolio/auth"
 	"github.com/andatoshiki/termfolio/config"
 	"github.com/andatoshiki/termfolio/counter"
 	"github.com/andatoshiki/termfolio/ui"
@@ -63,9 +64,8 @@ func main() {
 		log.Fatalf("Failed to ensure host key: %v", err)
 	}
 
-	publicKeyAuth := func(ctx ssh.Context, key ssh.PublicKey) bool {
-		return true
-	}
+	// Configure SSH public key authentication based on the auth mode
+	publicKeyAuth := auth.PublicKeyHandler(cfg.SSH.AuthMode, cfg.SSH.AuthorizedKeys)
 
 	teaHandler := func(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 		visitorCount := 0

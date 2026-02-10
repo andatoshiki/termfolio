@@ -7,6 +7,17 @@ ssh:
   
   # Path to the SSH host key (will be generated if not present)
   hostKeyPath: ".ssh/host_ed25519"
+  
+  # Authentication mode for SSH public key authentication
+  # Options:
+  #   "none" (default, recommended) - No public key auth, anyone can connect without keys
+  #   "authorized_keys" - Only allow keys listed in the authorizedKeys file
+  #   "allow_all" - INSECURE: Accept any public key (not recommended)
+  authMode: "none"
+  
+  # Path to authorized_keys file (required when authMode is "authorized_keys")
+  # Format: Standard OpenSSH authorized_keys format
+  # authorizedKeys: ".ssh/authorized_keys"
 
 counter:
   # You can also set "counter: false" to disable entirely.

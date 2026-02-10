@@ -84,6 +84,8 @@ ssh:
   port: 2222
   address: "0.0.0.0"
   hostKeyPath: ".ssh/host_ed25519"
+  authMode: "none"  # SSH authentication mode (none/authorized_keys/allow_all)
+  # authorizedKeys: ".ssh/authorized_keys"  # Required for authorized_keys mode
 
 counter:
   enabled: true
@@ -94,13 +96,23 @@ The `counter` section supports either:
 - Mapping form with `enabled` and optional `dbPath`.
 - Scalar boolean form such as `counter: false`.
 
-### 4.2: Environment variable overrides
+### 4.2: SSH Authentication modes
+For security, termfolio supports three authentication modes:
+- `none` (default): No public key auth required - anyone can connect (recommended for public portfolios)
+- `authorized_keys`: Only allow specific public keys from an authorized_keys file
+- `allow_all`: Accept any public key (⚠️ insecure, testing only)
+
+See [SECURITY.md](SECURITY.md) for detailed security documentation.
+
+### 4.3: Environment variable overrides
 These variables override file values:
 - `SSH_PORT`
 - `SSH_ADDRESS`
 - `SSH_HOST_KEY_PATH`
+- `SSH_AUTH_MODE`
+- `SSH_AUTHORIZED_KEYS`
 
-### 4.3: Counter and privacy behavior
+### 4.4: Counter and privacy behavior
 - Visitor count tracks unique IPs in SQLite.
 - Opted-out IPs are stored in a dedicated table and removed from counted visitors.
 - If tracking is disabled, the app still displays the current count without recording new visits.
