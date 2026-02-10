@@ -37,7 +37,7 @@ archives:
       - goos: windows
         formats: [zip]
     files:
-      - README.md
+      - readme.md
       - license
 
 checksum:
