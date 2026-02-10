@@ -47,10 +47,13 @@ builds:
       - hardfloat
       - softfloat
     ignore:
-      # modernc sqlite/libc does not support linux/mips hardfloat in our build setup
+      # modernc sqlite/libc does not support linux/mips in our build setup
       - goos: linux
         goarch: mips
         gomips: hardfloat
+      - goos: linux
+        goarch: mips
+        gomips: softfloat
       # Darwin: only amd64 and arm64
       - goos: darwin
         goarch: arm
