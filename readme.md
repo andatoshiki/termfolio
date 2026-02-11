@@ -1,7 +1,7 @@
 # Termfolio
 > SSH-based interactive portfolio application served over SSH, built with Go, Wish, and Bubble Tea.
 
-![20260210101610](https://cdn.tosh1ki.de/assets/images/20260210101610.png)
+<video src="https://cdn.tosh1ki.de/assets/images/video.mp4" controls autoplay muted loop playsinline></video>
 ## 1: Project overview
 ### 1.1: What this project does
 This project runs a terminal user interface over SSH so visitors can browse a personal portfolio without a browser.
