@@ -175,4 +175,4 @@ go run . -v
 
 ## 8: License
 This project is licensed under the MIT License.
-See `/Users/andatoshiki/dev/github/termfolio/license` for the full text.
+See [licnese](./) for the full text.
