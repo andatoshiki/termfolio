@@ -1,7 +1,7 @@
 # Termfolio
 > SSH-based interactive portfolio application served over SSH, built with Go, Wish, and Bubble Tea.
 
-<video src="https://cdn.tosh1ki.de/assets/images/video.mp4" controls autoplay muted loop playsinline></video>
+![20260211044531](https://cdn.tosh1ki.de/assets/images/20260211044531.png)
 ## 1: Project overview
 ### 1.1: What this project does
 This project runs a terminal user interface over SSH so visitors can browse a personal portfolio without a browser.
@@ -20,6 +20,29 @@ The application includes menu-driven sections for about, projects, education, co
 - `esc` or `backspace`: return to menu.
 - `t`: cycle theme.
 - `q` or `ctrl+c`: quit from menu.
+
+### 1.4: Try it out in action
+Connect directly to the live instance:
+
+```bash
+ssh ssh.toshiki.dev
+```
+
+### 1.5: Architecture diagram
+Not strictly required, but helpful for fast onboarding and release troubleshooting.
+
+```mermaid
+flowchart LR
+    client["SSH client"] --> server["Wish SSH server main go"]
+    server --> config["config loader"]
+    server --> counter["visitor counter store"]
+    server --> tui["Bubble Tea app model"]
+    tui --> pages["page renderers"]
+    tui --> view["theme and logo styles"]
+    tui --> feed["rss fetch and cache"]
+    feed --> rss["note toshiki feed xml"]
+    counter --> sqlite["sqlite visitors db"]
+```
 
 ## 2: Requirements
 ### 2.1: Runtime requirements
