@@ -65,6 +65,28 @@ var themePalettes = []ThemePalette{
 		Project:   lipgloss.Color("#FABD2F"),
 		LogoSnake: lipgloss.Color("#FE8019"),
 	},
+	{
+		Name:      "Catppuccin Mocha",
+		Primary:   lipgloss.Color("#CDD6F4"),
+		Muted:     lipgloss.Color("#6C7086"),
+		Title:     lipgloss.Color("#89B4FA"),
+		Link:      lipgloss.Color("#89DCEB"),
+		Highlight: lipgloss.Color("#CBA6F7"),
+		Tech:      lipgloss.Color("#A6E3A1"),
+		Project:   lipgloss.Color("#F9E2AF"),
+		LogoSnake: lipgloss.Color("#F5C2E7"),
+	},
+	{
+		Name:      "Rose Pine",
+		Primary:   lipgloss.Color("#E0DEF4"),
+		Muted:     lipgloss.Color("#6E6A86"),
+		Title:     lipgloss.Color("#9CCFD8"),
+		Link:      lipgloss.Color("#C4A7E7"),
+		Highlight: lipgloss.Color("#EBBCBA"),
+		Tech:      lipgloss.Color("#31748F"),
+		Project:   lipgloss.Color("#F6C177"),
+		LogoSnake: lipgloss.Color("#EB6F92"),
+	},
 }
 
 func ThemeAt(index int) ThemePalette {
