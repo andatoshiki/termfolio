@@ -3,14 +3,30 @@ package counter
 import (
 	"database/sql"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 
+	"github.com/oschwald/geoip2-golang"
 	_ "modernc.org/sqlite"
 )
 
 type Store struct {
 	db *sql.DB
+
+	statsMu     sync.Mutex
+	statsDirty  bool
+	statsPath   string
+	statsCache  CountryStats
+	statsReader *geoip2.Reader
+}
+
+type CountryStats struct {
+	TotalVisitors      int
+	TopCountry         string
+	TopCountryVisitors int
 }
 
 func Open(path string) (*Store, error) {
@@ -30,7 +46,10 @@ func Open(path string) (*Store, error) {
 		return nil, fmt.Errorf("open counter db: %w", err)
 	}
 
-	store := &Store{db: db}
+	store := &Store{
+		db:         db,
+		statsDirty: true,
+	}
 	if err := store.init(); err != nil {
 		_ = db.Close()
 		return nil, err
@@ -92,11 +111,15 @@ func (s *Store) RecordVisit(ip string) (int, error) {
 	}
 
 	if ip != "" {
-		if _, err := s.db.Exec(`
+		result, err := s.db.Exec(`
 INSERT OR IGNORE INTO visitors (ip, first_seen)
 VALUES (?, strftime('%s','now'));
-`, ip); err != nil {
+`, ip)
+		if err != nil {
 			return 0, fmt.Errorf("record visit: %w", err)
+		}
+		if rowsChanged(result) {
+			s.invalidateStatsCache()
 		}
 	}
 
@@ -118,6 +141,7 @@ func (s *Store) SetOptOut(ip string, optOut bool) (int, error) {
 	defer func() {
 		_ = tx.Rollback()
 	}()
+	visitorChanged := false
 
 	if optOut {
 		if _, err := tx.Exec(`
@@ -126,19 +150,23 @@ VALUES (?, strftime('%s','now'));
 `, ip); err != nil {
 			return 0, fmt.Errorf("opt-out insert: %w", err)
 		}
-		if _, err := tx.Exec(`DELETE FROM visitors WHERE ip = ?;`, ip); err != nil {
+		delResult, err := tx.Exec(`DELETE FROM visitors WHERE ip = ?;`, ip)
+		if err != nil {
 			return 0, fmt.Errorf("opt-out delete: %w", err)
 		}
+		visitorChanged = rowsChanged(delResult)
 	} else {
 		if _, err := tx.Exec(`DELETE FROM opt_out WHERE ip = ?;`, ip); err != nil {
 			return 0, fmt.Errorf("opt-out clear: %w", err)
 		}
-		if _, err := tx.Exec(`
+		insResult, err := tx.Exec(`
 INSERT OR IGNORE INTO visitors (ip, first_seen)
 VALUES (?, strftime('%s','now'));
-`, ip); err != nil {
+`, ip)
+		if err != nil {
 			return 0, fmt.Errorf("opt-in insert: %w", err)
 		}
+		visitorChanged = rowsChanged(insResult)
 	}
 
 	var count int
@@ -148,6 +176,10 @@ VALUES (?, strftime('%s','now'));
 
 	if err := tx.Commit(); err != nil {
 		return 0, fmt.Errorf("commit privacy tx: %w", err)
+	}
+
+	if visitorChanged {
+		s.invalidateStatsCache()
 	}
 
 	return count, nil
@@ -165,9 +197,136 @@ func (s *Store) Count() (int, error) {
 	return count, nil
 }
 
+func (s *Store) CountryStats(geoLiteDBPath string) (CountryStats, error) {
+	if s == nil || s.db == nil {
+		return CountryStats{}, fmt.Errorf("counter store is nil")
+	}
+	if strings.TrimSpace(geoLiteDBPath) == "" {
+		return CountryStats{}, fmt.Errorf("geolite db path is empty")
+	}
+	if _, err := os.Stat(geoLiteDBPath); err != nil {
+		if os.IsNotExist(err) {
+			return CountryStats{}, fmt.Errorf("geolite db not found")
+		}
+		return CountryStats{}, fmt.Errorf("geolite db is not accessible")
+	}
+
+	s.statsMu.Lock()
+	defer s.statsMu.Unlock()
+
+	if geoLiteDBPath != s.statsPath {
+		if s.statsReader != nil {
+			_ = s.statsReader.Close()
+			s.statsReader = nil
+		}
+		s.statsPath = geoLiteDBPath
+		s.statsDirty = true
+	}
+
+	if !s.statsDirty {
+		return s.statsCache, nil
+	}
+
+	if s.statsReader == nil {
+		reader, err := geoip2.Open(geoLiteDBPath)
+		if err != nil {
+			return CountryStats{}, fmt.Errorf("geolite db is invalid or unreadable")
+		}
+		s.statsReader = reader
+	}
+
+	totalVisitors, err := s.Count()
+	if err != nil {
+		return CountryStats{}, err
+	}
+
+	rows, err := s.db.Query(`SELECT ip FROM visitors;`)
+	if err != nil {
+		return CountryStats{}, fmt.Errorf("query visitor IPs: %w", err)
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+
+	countryCounts := make(map[string]int)
+	for rows.Next() {
+		var ipValue string
+		if err := rows.Scan(&ipValue); err != nil {
+			return CountryStats{}, fmt.Errorf("scan visitor IP: %w", err)
+		}
+
+		parsedIP := net.ParseIP(strings.TrimSpace(ipValue))
+		if parsedIP == nil {
+			continue
+		}
+
+		record, err := s.statsReader.Country(parsedIP)
+		if err != nil || record == nil {
+			continue
+		}
+
+		country := strings.TrimSpace(record.Country.Names["en"])
+		if country == "" {
+			country = strings.TrimSpace(record.Country.IsoCode)
+		}
+		if country == "" {
+			continue
+		}
+		countryCounts[country]++
+	}
+
+	if err := rows.Err(); err != nil {
+		return CountryStats{}, fmt.Errorf("iterate visitor IPs: %w", err)
+	}
+
+	topCountry := "N/A"
+	topCountryVisitors := 0
+	for country, count := range countryCounts {
+		if count > topCountryVisitors || (count == topCountryVisitors && country < topCountry) {
+			topCountry = country
+			topCountryVisitors = count
+		}
+	}
+
+	stats := CountryStats{
+		TotalVisitors:      totalVisitors,
+		TopCountry:         topCountry,
+		TopCountryVisitors: topCountryVisitors,
+	}
+	s.statsCache = stats
+	s.statsDirty = false
+	return stats, nil
+}
+
 func (s *Store) Close() error {
 	if s == nil || s.db == nil {
 		return nil
 	}
+	s.statsMu.Lock()
+	if s.statsReader != nil {
+		_ = s.statsReader.Close()
+		s.statsReader = nil
+	}
+	s.statsMu.Unlock()
 	return s.db.Close()
+}
+
+func (s *Store) invalidateStatsCache() {
+	if s == nil {
+		return
+	}
+	s.statsMu.Lock()
+	s.statsDirty = true
+	s.statsMu.Unlock()
+}
+
+func rowsChanged(result sql.Result) bool {
+	if result == nil {
+		return false
+	}
+	changed, err := result.RowsAffected()
+	if err != nil {
+		return true
+	}
+	return changed > 0
 }

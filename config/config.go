@@ -12,6 +12,7 @@ import (
 type Config struct {
 	SSH     SSHConfig     `yaml:"ssh"`
 	Counter CounterConfig `yaml:"counter"`
+	Stats   StatsConfig   `yaml:"stats"`
 }
 
 type SSHConfig struct {
@@ -23,6 +24,41 @@ type SSHConfig struct {
 type CounterConfig struct {
 	Enabled bool   `yaml:"enabled"`
 	DBPath  string `yaml:"dbPath"`
+}
+
+type StatsConfig struct {
+	Enabled       bool   `yaml:"enabled"`
+	GeoLiteDBPath string `yaml:"geoLiteDbPath"`
+}
+
+func (s *StatsConfig) UnmarshalYAML(value *yaml.Node) error {
+	switch value.Kind {
+	case yaml.ScalarNode:
+		var enabled bool
+		if err := value.Decode(&enabled); err != nil {
+			return err
+		}
+		s.Enabled = enabled
+		return nil
+	case yaml.MappingNode:
+		type statsYAML struct {
+			Enabled       *bool   `yaml:"enabled"`
+			GeoLiteDBPath *string `yaml:"geoLiteDbPath"`
+		}
+		var raw statsYAML
+		if err := value.Decode(&raw); err != nil {
+			return err
+		}
+		if raw.Enabled != nil {
+			s.Enabled = *raw.Enabled
+		}
+		if raw.GeoLiteDBPath != nil {
+			s.GeoLiteDBPath = *raw.GeoLiteDBPath
+		}
+		return nil
+	default:
+		return fmt.Errorf("invalid stats config")
+	}
 }
 
 func (c *CounterConfig) UnmarshalYAML(value *yaml.Node) error {
@@ -70,6 +106,10 @@ func Load(configPath string, userProvided bool) (*Config, error) {
 			Enabled: true,
 			DBPath:  "data/visitors.db",
 		},
+		Stats: StatsConfig{
+			Enabled:       false,
+			GeoLiteDBPath: "data/GeoLite2-Country.mmdb",
+		},
 	}
 
 	// Try to read config file
@@ -84,6 +124,7 @@ func Load(configPath string, userProvided bool) (*Config, error) {
 			applyEnvVarOverrides(cfg)
 			resolveHostKeyPath(cfg, configPath)
 			resolveCounterPath(cfg, configPath)
+			resolveStatsPath(cfg, configPath)
 			return cfg, nil
 		}
 		// Other read errors (permissions, etc.) are always errors
@@ -101,6 +142,7 @@ func Load(configPath string, userProvided bool) (*Config, error) {
 	// Resolve host key path if relative (relative to config file directory)
 	resolveHostKeyPath(cfg, configPath)
 	resolveCounterPath(cfg, configPath)
+	resolveStatsPath(cfg, configPath)
 
 	return cfg, nil
 }
@@ -149,6 +191,20 @@ func resolveCounterPath(cfg *Config, configPath string) {
 	}
 	baseDir := filepath.Dir(configPath)
 	cfg.Counter.DBPath = filepath.Clean(filepath.Join(baseDir, cfg.Counter.DBPath))
+}
+
+func resolveStatsPath(cfg *Config, configPath string) {
+	if cfg == nil {
+		return
+	}
+	if cfg.Stats.GeoLiteDBPath == "" || filepath.IsAbs(cfg.Stats.GeoLiteDBPath) {
+		return
+	}
+	if configPath == "" {
+		return
+	}
+	baseDir := filepath.Dir(configPath)
+	cfg.Stats.GeoLiteDBPath = filepath.Clean(filepath.Join(baseDir, cfg.Stats.GeoLiteDBPath))
 }
 
 func (cfg *SSHConfig) ListenAddr() string {

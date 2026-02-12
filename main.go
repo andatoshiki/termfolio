@@ -96,7 +96,14 @@ func main() {
 				log.Printf("Failed to update counter: %v", err)
 			}
 		}
-		return ui.NewModelWithCounter(counterStore, visitorCount, remoteIP, trackingEnabled), []tea.ProgramOption{tea.WithAltScreen()}
+		return ui.NewModelWithCounter(
+			counterStore,
+			visitorCount,
+			remoteIP,
+			trackingEnabled,
+			cfg.Stats.Enabled,
+			cfg.Stats.GeoLiteDBPath,
+		), []tea.ProgramOption{tea.WithAltScreen()}
 	}
 
 	s, err := wish.NewServer(
