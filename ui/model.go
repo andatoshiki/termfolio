@@ -46,6 +46,7 @@ type model struct {
 	statsTotal      int
 	statsTopCountry string
 	statsTopCount   int
+	statsTopList    []counter.CountryCount
 	statsError      string
 	feedItems       []pages.FeedItem
 	feedCursor      int
@@ -81,6 +82,7 @@ func initialModel() model {
 		statsTotal:      0,
 		statsTopCountry: "",
 		statsTopCount:   0,
+		statsTopList:    nil,
 		statsError:      "",
 		feedItems:       nil,
 		feedCursor:      0,
@@ -387,8 +389,7 @@ func (m model) View() string {
 			m.themeLabel(),
 			m.statsEnabled,
 			m.statsTotal,
-			m.statsTopCountry,
-			m.statsTopCount,
+			m.statsTopList,
 			m.statsError,
 		)
 	case feedPage:
@@ -446,6 +447,7 @@ func (m model) refreshStats() model {
 	m.statsTotal = 0
 	m.statsTopCountry = ""
 	m.statsTopCount = 0
+	m.statsTopList = nil
 	m.statsError = ""
 
 	if !m.statsEnabled {
@@ -465,6 +467,7 @@ func (m model) refreshStats() model {
 	m.statsTotal = stats.TotalVisitors
 	m.statsTopCountry = stats.TopCountry
 	m.statsTopCount = stats.TopCountryVisitors
+	m.statsTopList = append([]counter.CountryCount(nil), stats.TopCountries...)
 	return m
 }
 
