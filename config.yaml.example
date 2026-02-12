@@ -15,3 +15,10 @@ counter:
 
   # Path to the SQLite database file
   dbPath: "data/visitors.db"
+
+stats:
+  # Enable/disable country stats on the privacy page
+  enabled: false
+
+  # Path to the GeoLite country database file
+  geoLiteDbPath: "data/GeoLite2-Country.mmdb"

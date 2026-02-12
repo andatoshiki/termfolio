@@ -41,6 +41,12 @@ type model struct {
 	remoteIP        string
 	trackingEnabled bool
 	privacyCursor   int
+	statsEnabled    bool
+	statsGeoLiteDB  string
+	statsTotal      int
+	statsTopCountry string
+	statsTopCount   int
+	statsError      string
 	feedItems       []pages.FeedItem
 	feedCursor      int
 	feedOffset      int
@@ -70,6 +76,12 @@ func initialModel() model {
 		remoteIP:        "",
 		trackingEnabled: false,
 		privacyCursor:   0,
+		statsEnabled:    false,
+		statsGeoLiteDB:  "",
+		statsTotal:      0,
+		statsTopCountry: "",
+		statsTopCount:   0,
+		statsError:      "",
 		feedItems:       nil,
 		feedCursor:      0,
 		feedOffset:      0,
@@ -95,12 +107,22 @@ func NewModelWithVisitorCount(visitorCount int) tea.Model {
 	return m
 }
 
-func NewModelWithCounter(store *counter.Store, visitorCount int, remoteIP string, trackingEnabled bool) tea.Model {
+func NewModelWithCounter(
+	store *counter.Store,
+	visitorCount int,
+	remoteIP string,
+	trackingEnabled bool,
+	statsEnabled bool,
+	statsGeoLiteDB string,
+) tea.Model {
 	m := initialModel()
 	m.counterStore = store
 	m.visitorCount = visitorCount
 	m.remoteIP = remoteIP
 	m.trackingEnabled = trackingEnabled
+	m.statsEnabled = statsEnabled
+	m.statsGeoLiteDB = statsGeoLiteDB
+	m = m.refreshStats()
 	return m
 }
 
@@ -357,7 +379,18 @@ func (m model) View() string {
 	case contactPage:
 		content = pages.RenderContact(m.styles, m.themeLabel())
 	case privacyPage:
-		content = pages.RenderPrivacy(m.styles, m.privacyCursor, m.trackingEnabled, m.counterStore != nil && m.remoteIP != "", m.themeLabel())
+		content = pages.RenderPrivacy(
+			m.styles,
+			m.privacyCursor,
+			m.trackingEnabled,
+			m.counterStore != nil && m.remoteIP != "",
+			m.themeLabel(),
+			m.statsEnabled,
+			m.statsTotal,
+			m.statsTopCountry,
+			m.statsTopCount,
+			m.statsError,
+		)
 	case feedPage:
 		content = pages.RenderFeed(m.styles, m.feedItems, m.feedCursor, m.feedOffset, feedPageSize, m.feedLoading, m.feedError, m.themeLabel())
 	}
@@ -405,7 +438,34 @@ func (m model) setTracking(enabled bool) (model, tea.Cmd) {
 	}
 	m.trackingEnabled = enabled
 	m.visitorCount = count
+	m = m.refreshStats()
 	return m, nil
+}
+
+func (m model) refreshStats() model {
+	m.statsTotal = 0
+	m.statsTopCountry = ""
+	m.statsTopCount = 0
+	m.statsError = ""
+
+	if !m.statsEnabled {
+		return m
+	}
+	if m.counterStore == nil {
+		m.statsError = "counter is disabled"
+		return m
+	}
+
+	stats, err := m.counterStore.CountryStats(m.statsGeoLiteDB)
+	if err != nil {
+		m.statsError = err.Error()
+		return m
+	}
+
+	m.statsTotal = stats.TotalVisitors
+	m.statsTopCountry = stats.TopCountry
+	m.statsTopCount = stats.TopCountryVisitors
+	return m
 }
 
 func (m model) adjustFeedWindow() model {

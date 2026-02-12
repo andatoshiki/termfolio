@@ -255,7 +255,7 @@ func (m model) View() string {
 	case contactPage:
 		content = RenderContact(m.styles, themeLabel)
 	case privacyPage:
-		content = RenderPrivacy(m.styles, 0, false, false, themeLabel)
+		content = RenderPrivacy(m.styles, 0, false, false, themeLabel, false, 0, "", 0, "")
 	case feedPage:
 		content = RenderFeed(m.styles, nil, 0, 0, 0, false, "", themeLabel)
 	}

@@ -118,6 +118,10 @@ ssh:
 counter:
   enabled: true
   dbPath: "data/visitors.db"
+
+stats:
+  enabled: false
+  geoLiteDbPath: "data/GeoLite2-Country.mmdb"
 ```
 
 The `counter` section supports either:
@@ -134,6 +138,8 @@ These variables override file values:
 - Visitor count tracks unique IPs in SQLite.
 - Opted-out IPs are stored in a dedicated table and removed from counted visitors.
 - If tracking is disabled, the app still displays the current count without recording new visits.
+- Optional `stats` block can show privacy-page stats when enabled.
+- Country stats read from `stats.geoLiteDbPath` and report top country by unique visitors.
 
 ## 5: Container and deployment
 ### 5.1: Docker image flow
@@ -165,7 +171,7 @@ entrypoint.sh container startup and host key bootstrap
 Version constants are defined in `version/version.go`.
 At this snapshot:
 - App name: `termfolio`
-- Version: `0.1.5`
+- Version: `0.1.6`
 
 Print version:
 
