@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -27,6 +28,12 @@ type CountryStats struct {
 	TotalVisitors      int
 	TopCountry         string
 	TopCountryVisitors int
+	TopCountries       []CountryCount
+}
+
+type CountryCount struct {
+	Name     string
+	Visitors int
 }
 
 func Open(path string) (*Store, error) {
@@ -279,19 +286,37 @@ func (s *Store) CountryStats(geoLiteDBPath string) (CountryStats, error) {
 		return CountryStats{}, fmt.Errorf("iterate visitor IPs: %w", err)
 	}
 
+	topCountries := make([]CountryCount, 0, len(countryCounts))
+	for country, count := range countryCounts {
+		topCountries = append(topCountries, CountryCount{
+			Name:     country,
+			Visitors: count,
+		})
+	}
+
+	sort.Slice(topCountries, func(i, j int) bool {
+		if topCountries[i].Visitors == topCountries[j].Visitors {
+			return topCountries[i].Name < topCountries[j].Name
+		}
+		return topCountries[i].Visitors > topCountries[j].Visitors
+	})
+
+	if len(topCountries) > 5 {
+		topCountries = topCountries[:5]
+	}
+
 	topCountry := "N/A"
 	topCountryVisitors := 0
-	for country, count := range countryCounts {
-		if count > topCountryVisitors || (count == topCountryVisitors && country < topCountry) {
-			topCountry = country
-			topCountryVisitors = count
-		}
+	if len(topCountries) > 0 {
+		topCountry = topCountries[0].Name
+		topCountryVisitors = topCountries[0].Visitors
 	}
 
 	stats := CountryStats{
 		TotalVisitors:      totalVisitors,
 		TopCountry:         topCountry,
 		TopCountryVisitors: topCountryVisitors,
+		TopCountries:       append([]CountryCount(nil), topCountries...),
 	}
 	s.statsCache = stats
 	s.statsDirty = false

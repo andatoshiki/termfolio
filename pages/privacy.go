@@ -6,13 +6,15 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/andatoshiki/termfolio/counter"
 	"github.com/andatoshiki/termfolio/version"
 	"github.com/andatoshiki/termfolio/view"
 )
 
 const (
-	privacyLeftWidth  = 12
-	privacyRightWidth = 40
+	privacyOptionLabelWidth = 10
+	privacyOptionDescWidth  = 30
+	privacyCountryNameWidth = 18
 )
 
 func RenderPrivacy(
@@ -23,8 +25,7 @@ func RenderPrivacy(
 	themeLabel string,
 	statsEnabled bool,
 	statsTotal int,
-	statsTopCountry string,
-	statsTopCount int,
+	statsTopCountries []counter.CountryCount,
 	statsError string,
 ) string {
 	var b strings.Builder
@@ -51,32 +52,12 @@ func RenderPrivacy(
 		b.WriteString(styles.Content.Render("Choose whether your IP is tracked."))
 		b.WriteString("\n\n")
 
+		var optionRows []string
 		for i, opt := range options {
-			cursorMark := "  "
-			if cursor == i {
-				cursorMark = "→ "
-			}
-			leftText := cursorMark + opt.label
-			leftCell := lipgloss.NewStyle().Width(privacyLeftWidth).Render(leftText)
-			if cursor == i {
-				leftCell = styles.Selected.Render(leftCell)
-			} else {
-				leftCell = styles.Menu.Render(leftCell)
-			}
-
-			rightCell := lipgloss.NewStyle().
-				Width(privacyRightWidth).
-				Align(lipgloss.Right).
-				Render(opt.desc)
-			if cursor == i {
-				rightCell = styles.Selected.Copy().Bold(false).Faint(true).Render(rightCell)
-			} else {
-				rightCell = styles.Subtle.Render(rightCell)
-			}
-
-			b.WriteString(leftCell + rightCell)
-			b.WriteString("\n")
+			optionRows = append(optionRows, renderPrivacyOptionRow(styles, cursor == i, opt.label, opt.desc))
 		}
+		b.WriteString(lipgloss.NewStyle().PaddingLeft(2).Render(strings.Join(optionRows, "\n")))
+		b.WriteString("\n")
 
 		status := "No"
 		if trackingEnabled {
@@ -87,19 +68,26 @@ func RenderPrivacy(
 
 	if statsEnabled {
 		b.WriteString("\n\n")
-		b.WriteString(styles.Accent.Render("━━━ Stats ━━━"))
+		b.WriteString(styles.Title.Render("━━━ Stats ━━━"))
 		b.WriteString("\n")
 
 		if statsError != "" {
 			b.WriteString(styles.Subtle.Render("Unavailable: " + statsError))
 		} else {
-			topCountry := statsTopCountry
-			if strings.TrimSpace(topCountry) == "" {
-				topCountry = "N/A"
+			statsLines := []string{
+				styles.Content.Render(fmt.Sprintf("Total unique visitors: %d", statsTotal)),
 			}
-			b.WriteString(styles.Content.Render(fmt.Sprintf("Total unique visitors: %d", statsTotal)))
-			b.WriteString("\n")
-			b.WriteString(styles.Content.Render(fmt.Sprintf("Top country: %s (%d)", topCountry, statsTopCount)))
+			if len(statsTopCountries) == 0 {
+				statsLines = append(statsLines, styles.Subtle.Render("Top 5 countries: N/A"))
+			} else {
+				statsLines = append(statsLines, styles.Content.Render("Top 5 countries:"))
+				for i, country := range statsTopCountries {
+					label := fmt.Sprintf("%d. %-*s %d", i+1, privacyCountryNameWidth, country.Name, country.Visitors)
+					statsLines = append(statsLines, styles.Content.Render(label))
+				}
+			}
+
+			b.WriteString(strings.Join(statsLines, "\n"))
 		}
 	}
 
@@ -108,4 +96,30 @@ func RenderPrivacy(
 	b.WriteString(styles.Help.Render(help))
 
 	return b.String()
+}
+
+func renderPrivacyOptionRow(styles view.ThemeStyles, selected bool, label string, description string) string {
+	cursorMark := "  "
+	leftStyle := styles.Menu
+	rightStyle := styles.Subtle
+	if selected {
+		cursorMark = "→ "
+		leftStyle = styles.Selected
+		rightStyle = styles.Selected.Copy().Bold(false).Faint(true)
+	}
+
+	leftCell := lipgloss.NewStyle().
+		Width(privacyOptionLabelWidth).
+		Align(lipgloss.Left).
+		Render(cursorMark + label)
+	rightCell := lipgloss.NewStyle().
+		Width(privacyOptionDescWidth).
+		Align(lipgloss.Left).
+		Render(description)
+
+	return lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		leftStyle.Render(leftCell),
+		rightStyle.Render(rightCell),
+	)
 }
